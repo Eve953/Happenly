@@ -23,7 +23,6 @@ if "session" in st.session_state:
 
 
 
-
 def get_auth_user():
     """
     Get the Supabase auth user stored in session_state by main.py.
@@ -521,7 +520,7 @@ with tab_dashboard:
             y=[accepted, pending, declined],
             labels={"x": "RSVP Status", "y": "Count"},
         )
-        st.plotly_chart(rsvp_fig, use_container_width=True)
+        st.plotly_chart(rsvp_fig, width="stretch")
 
         st.write("### Task Status")
         task_fig = px.bar(
@@ -535,7 +534,6 @@ with tab_dashboard:
 
 with tab_calendar:
     st.subheader("Event Calendar")
-
     events = load_events(app_user_id)
 
     if not events:

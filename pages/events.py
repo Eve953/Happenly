@@ -2,7 +2,7 @@ import streamlit as st
 from supabase import create_client, Client
 from streamlit_calendar import calendar
 import plotly.express as px
-from datetime import date, time
+from datetime import date, time, datetime, timedelta
 
 
 
@@ -14,6 +14,12 @@ def init_connection() -> Client:
 
 
 supabase: Client = init_connection()
+
+if "session" in st.session_state:
+    supabase.auth.set_session(
+        st.session_state["session"].access_token,
+        st.session_state["session"].refresh_token
+    )
 
 
 
@@ -107,7 +113,7 @@ with tab_events:
         with c1:
             ev_date = st.date_input("Date *", value=date.today())
         with c2:
-            ev_time = st.time_input("Time", value=time(18, 0))  # 6:00 PM default
+            ev_time = st.time_input("Time", value=time(18, 0))  
 
         venue = st.text_input("Venue")
         category = st.text_input("Category (e.g., Birthday, Graduation)")
@@ -211,7 +217,7 @@ with tab_guests:
 
         # Load guests
         guests_res = (
-            supabase.table("guest")
+            supabase.table("guests")
             .select("*")
             .eq("eventid", selected_event_id)
             .execute()
@@ -248,7 +254,7 @@ with tab_guests:
                 st.error("Name and email are required.")
             else:
                 try:
-                    supabase.table("guest").insert(
+                    supabase.table("guests").insert(
                         {
                             "name": g_name,
                             "email": g_email,
@@ -277,7 +283,7 @@ with tab_guests:
             with col3:
                 if st.button("Save", key=f"update_guest_{g['guestid']}"):
                     try:
-                        supabase.table("guest").update(
+                        supabase.table("guests").update(
                             {"rsvpstatus": new_rsvp}
                         ).eq("guestid", g["guestid"]).execute()
                         st.success("RSVP updated.")
@@ -295,7 +301,7 @@ with tab_vendors:
 
     if selected_event_id:
         vendors_res = (
-            supabase.table("vendor")
+            supabase.table("vendors")
             .select("*")
             .eq("eventid", selected_event_id)
             .execute()
@@ -332,7 +338,7 @@ with tab_vendors:
                 st.error("Vendor name is required.")
             else:
                 try:
-                    supabase.table("vendor").insert(
+                    supabase.table("vendors").insert(
                         {
                             "name": v_name,
                             "type": v_type or None,
@@ -351,7 +357,7 @@ with tab_vendors:
                 f"Delete {v['name']}", key=f"delete_vendor_{v['vendorid']}"
             ):
                 try:
-                    supabase.table("vendor").delete().eq(
+                    supabase.table("vendors").delete().eq(
                         "vendorid", v["vendorid"]
                     ).execute()
                     st.warning("Vendor deleted.")
@@ -415,7 +421,7 @@ with tab_tasks:
                             "assignedto": t_assigned,
                             "status": t_status,
                             "eventid": selected_event_id,
-                            "auth_user_id": app_user_id,
+                           
                         }
                     ).execute()
                     st.success("Task added.")
@@ -459,7 +465,7 @@ with tab_dashboard:
     if selected_event_id:
         # Load related data
         guests = (
-            supabase.table("guest")
+            supabase.table("guests")
             .select("*")
             .eq("eventid", selected_event_id)
             .execute()
@@ -467,7 +473,7 @@ with tab_dashboard:
             or []
         )
         vendors = (
-            supabase.table("vendor")
+            supabase.table("vendors")
             .select("*")
             .eq("eventid", selected_event_id)
             .execute()
@@ -547,15 +553,15 @@ with tab_calendar:
             date_str = str(e["date"])
             time_str = e.get("time") or "09:00:00"
 
-            start = f"{date_str}T{time_str}"
-            # Simple 2-hour window for visualization
-            end = f"{date_str}T12:00:00"
+            start_dt = datetime.fromisoformat(f"{date_str}T{time_str}")
+            end_dt = start_dt + timedelta(hours=2)
+            
 
             calendar_events.append(
                 {
                     "title": e["title"],
-                    "start": start,
-                    "end": end,
+                    "start": start_dt.isoformat(),
+                    "end": end_dt.isoformat(),
                     "resourceId": "a",
                     "backgroundColor": status_colors.get(e["status"], "#3788d8"),
                 }

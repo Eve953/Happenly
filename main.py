@@ -45,9 +45,18 @@ if signed_up:
 #login logic
 if logged_in:
     try:
-        User = supabase.auth.sign_in_with_password({"email": l_email, "password": l_password})        
-        if User and User.user:
-                st.session_state["user"] = User.user
-                st.switch_page("pages/events.py")
+        result = supabase.auth.sign_in_with_password({
+            "email": l_email,
+            "password": l_password
+        })
+
+        if result and result.user:
+
+           
+            st.session_state["user"] = result.user
+            st.session_state["session"] = result.session
+
+            st.switch_page("pages/events.py")
+
     except Exception as e:
-            st.error(f"Login Failed: {e}")
+        st.error(f"Login Failed: {e}")

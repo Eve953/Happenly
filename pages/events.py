@@ -576,8 +576,12 @@ with tab_calendar:
             "initialView": "dayGridMonth",
         }
 
-        calendar(
-            events=calendar_events,
-            options=calendar_options,
-            key="calendar",
-        )
+        if calendar_events:
+            calendar(
+                events=calendar_events,
+                options=calendar_options,
+                key="calendar",
+            )
+        else:
+            st.info("No valid events to render on the calendar yet.")
+

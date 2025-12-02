@@ -184,26 +184,25 @@ with tab_events:
                     ):
                         try:
                             supabase.table("events").update(
-                                {"status": new_status}
+                                {"status": new_status, "budget": new_budget}
                             ).eq("eventid", e["eventid"]).execute()
-                            supabase.table("events").update(
-                                {"budget": new_budget}
-                            ).eq("eventid", e["eventid"]).execute()
-
                             st.success("Event updated.")
                             st.rerun()
                         except Exception as ex:
                             st.error(f"Update failed: {ex}")
 
-                    if st.button(
-                        "Delete Event", key=f"delete_{e['eventid']}"
-                    ):
+                    if st.button("Delete Event", key=f"delete_{e['eventid']}"):
                         try:
-                            supabase.table("events").delete().eq("eventid",  e["eventid"]).execute()
-                            st.warning("Event deleted.")
+                            supabase.table("tasks").delete().eq("eventid", e["eventid"]).execute()
+                            supabase.table("guests").delete().eq("eventid", e["eventid"]).execute()
+                            supabase.table("vendors").delete().eq("eventid", e["eventid"]).execute()
+
+                            supabase.table("events").delete().eq("eventid", e["eventid"]).execute()
+                            st.warning("Event and related data deleted.")
                             st.rerun()
                         except Exception as ex:
                             st.error(f"Delete failed: {ex}")
+
 
 # ---------- GUESTS TAB ----------
 
@@ -531,3 +530,4 @@ with tab_dashboard:
             labels={"x": "Task Status", "y": "Count"},
         )
         st.plotly_chart(task_fig, use_container_width=True)
+

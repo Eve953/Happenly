@@ -96,8 +96,8 @@ st.write("---")
 # Load events for this user once
 events = load_events(app_user_id)
 
-tab_events, tab_guests, tab_vendors, tab_tasks, tab_dashboard, tab_calendar = st.tabs(
-    ["Events", "Guests", "Vendors", "Tasks", "Dashboard", "Calendar"]
+tab_events, tab_guests, tab_vendors, tab_tasks, tab_dashboard = st.tabs(
+    ["Events", "Guests", "Vendors", "Tasks", "Dashboard"]
 )
 
 # ---------- EVENTS TAB ----------
@@ -184,8 +184,12 @@ with tab_events:
                     ):
                         try:
                             supabase.table("events").update(
-                                {"status": new_status, "budget": new_budget}
+                                {"status": new_status}
                             ).eq("eventid", e["eventid"]).execute()
+                            supabase.table("events").update(
+                                {"budget": new_budget}
+                            ).eq("eventid", e["eventid"]).execute()
+
                             st.success("Event updated.")
                             st.rerun()
                         except Exception as ex:
@@ -195,9 +199,7 @@ with tab_events:
                         "Delete Event", key=f"delete_{e['eventid']}"
                     ):
                         try:
-                            supabase.table("events").delete().eq(
-                                "eventid", e["eventid"]
-                            ).execute()
+                            supabase.table("events").delete().eq("eventid",  e["eventid"]).execute()
                             st.warning("Event deleted.")
                             st.rerun()
                         except Exception as ex:
@@ -529,59 +531,3 @@ with tab_dashboard:
             labels={"x": "Task Status", "y": "Count"},
         )
         st.plotly_chart(task_fig, use_container_width=True)
-
-# ---------- CALENDAR TAB ----------
-
-with tab_calendar:
-    st.subheader("Event Calendar")
-    events = load_events(app_user_id)
-
-    if not events:
-        st.info("No events to show on the calendar yet.")
-    else:
-        status_colors = {
-            "upcoming": "#3788d8",
-            "ongoing": "#28a745",
-            "completed": "#6c757d",
-        }
-
-        calendar_events = []
-        for e in events:
-            # e['date'] is a date string; e['time'] is "HH:MM:SS" or None
-            date_str = str(e["date"])
-            time_str = e.get("time") or "09:00:00"
-
-            start_dt = datetime.fromisoformat(f"{date_str}T{time_str}")
-            end_dt = start_dt + timedelta(hours=2)
-            
-
-            calendar_events.append(
-                {
-                    "title": e["title"],
-                    "start": start_dt.isoformat(),
-                    "end": end_dt.isoformat(),
-                    "resourceId": "a",
-                    "backgroundColor": status_colors.get(e["status"], "#3788d8"),
-                }
-            )
-
-        calendar_options = {
-            "editable": False,
-            "selectable": False,
-            "headerToolbar": {
-                "left": "today prev,next",
-                "center": "title",
-                "right": "dayGridMonth,timeGridWeek,timeGridDay",
-            },
-            "initialView": "dayGridMonth",
-        }
-
-        if calendar_events:
-            calendar(
-                events=calendar_events,
-                options=calendar_options,
-                key="calendar",
-            )
-        else:
-            st.info("No valid events to render on the calendar yet.")
-
